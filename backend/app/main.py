@@ -1,45 +1,32 @@
-#python -m pip install -r requirements.txt
-from fastapi import FastAPI
-#from sqlalchemy import create_engine
-#from sqlalchemy.ext.declarative import declarative_base
-#from sqlalchemy.orm import sessionmaker
-import os
-"""
-DATABASE_URL = os.getenv("DATABASE_URL")
+from fastapi import FastAPI, HTTPException, Query, Depends
+from sqlalchemy.orm import Session
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-"""
-app = FastAPI()
+import crud, models, schemas
+from database import SessionLocal, engine
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+models.Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title="Articles",
+    description="Start using FastAPI in development",
+    version="0.1"
+)
+
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close() 
 
 
-"""
-async def app(scope, receive, send):
-    assert scope['type'] == 'http'
+@app.get('/articles/', response_model=schemas.ArticleBase, status_code=200)
+def get_article(symbol: str, db: Session = Depends(get_db)) -> models.Article:
+    db_stock = crud.get_stock(db, symbol=symbol)
+    if db_stock is None:
+        raise HTTPException(
+            status_code=404, detail=f"No stock {symbol} found."
+        )
 
-    await send({
-        'type': 'http.response.start',
-        'status': 200,
-        'headers': [
-            [b'content-type', b'text/plain'],
-        ],
-    })
-    await send({
-        'type': 'http.response.body',
-        'body': b'Hello, world!',
-    })
-"""
-
-"""
-beautifulsoup4
-requests
-psycopg2-binary
-fastapi
-uvicorn[standard]
-sqlalchemy
-"""
+    return db_stock
