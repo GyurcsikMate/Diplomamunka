@@ -15,19 +15,22 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
-
-  db:
-    image: postgres:13
+      - mongodb
     environment:
-      POSTGRES_USER: example
-      POSTGRES_PASSWORD: example
-      POSTGRES_DB: example
+      - MONGO_DETAILS=mongodb://mongodb:27017
+
+  mongodb:
+    image: mongo:5.0
     ports:
-      - "5432:5432"
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/dbc
 
   ollama:
     build:
       context: ./ollama
     ports:
       - "11434:11434"  # Example port, update as necessary
+
+volumes:
+  mongo-data:

@@ -1,7 +1,5 @@
 requests
 fastapi
 uvicorn[standard]
-sqlalchemy
-psycopg2
-starlette
+pymongo
 pydantic
