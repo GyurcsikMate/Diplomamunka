@@ -1,7 +1,19 @@
 #import  models, schemas
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from pymongo import MongoClient
 import os
+from pydantic import BaseModel, Field
+
+
+class Article(BaseModel):
+    __tablename__ = 'articles'
+    id:str = Field(...)
+    title:str = Field(...)
+    short_text:str = Field(...)
+    url:str = Field(...)
+    date:str = Field(...)
+    sport:str = Field(...)
+
 
 app = FastAPI()
 
@@ -28,16 +40,12 @@ def read_articles():
         return articles
     return {"error": "Item not found"}
 
-@app.get("/articles/{article_id}")
-def insert_user(user: User):
-    result = await app.mongodb["users"].insert_one(user.dict())
-    inserted_user = await app.mongodb["users"].find_one({"_id": result.inserted_id})
-    return inserted_user
-def read_article(article_id: int):
-    article = collection.find_one({"article_id": article_id})
-    if article:
-        return {"article_id": article_id, "value": article["value"]}
-    return {"error": "Item not found"}
+@app.post("/articles")
+def insert_user(article:Article= Body(...)):
+    result =  collection.insert_one(article.dict())
+    inserted_article =  collection.find_one({"_id": result.inserted_id})
+    return inserted_article
+
 
 
 
