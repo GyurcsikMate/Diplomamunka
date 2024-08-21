@@ -1,18 +1,35 @@
 #import  models, schemas
 from fastapi import FastAPI, Body
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 import os
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional, List
+from bson import ObjectId
+from typing_extensions import Annotated
+from pydantic.functional_validators import BeforeValidator
+from bson import json_util, ObjectId
+import json
+import motor.motor_asyncio
 
+def parse_json(data):
+    return json.loads(json_util.dumps(data))
+
+
+PyObjectId = Annotated[str, BeforeValidator(str)]
 
 class Article(BaseModel):
     __tablename__ = 'articles'
-    id:str = Field(...)
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title:str = Field(...)
     short_text:str = Field(...)
     url:str = Field(...)
     date:str = Field(...)
     sport:str = Field(...)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str}
+    )
 
 
 app = FastAPI()
@@ -33,16 +50,16 @@ def read_article(article_id: int):
         return {"article_id": article_id, "value": article["value"]}
     return {"error": "Item not found"}
 
-@app.get("/articles")
+@app.get("/articles", response_model=list[Article])
 def read_articles():
-    articles = collection.find()
+    articles =  collection.find()
     if articles:
         return articles
     return {"error": "Item not found"}
 
 @app.post("/articles")
 def insert_user(article:Article= Body(...)):
-    result =  collection.insert_one(article.dict())
+    result =  collection.insert_one(article.model_dump(by_alias=True, exclude=["id"]))
     inserted_article =  collection.find_one({"_id": result.inserted_id})
     return inserted_article
 
