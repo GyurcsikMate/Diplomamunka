@@ -31,6 +31,15 @@ services:
       context: ./ollama
     ports:
       - "11434:11434"  # Example port, update as necessary
+    stdin_open: true  # equivalent to -i
+    tty: true        # equivalent to -t
+  
+  
+  
+
+
+
+
 
 volumes:
   mongo-data:

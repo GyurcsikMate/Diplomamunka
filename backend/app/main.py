@@ -35,33 +35,35 @@ class Article(BaseModel):
 app = FastAPI()
 
 MONGO_DETAILS = os.getenv("MONGO_DETAILS", "mongodb://mongodb:27017")
-client = MongoClient(MONGO_DETAILS)
+client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DETAILS)
 database = client['test_database']
 collection = database['articles']
 
 @app.get("/")
-def read_root():
+async def read_root():
     return {"Hello": "World"}
 
 @app.get("/articles/{article_id}")
-def read_article(article_id: int):
-    article = collection.find_one({"article_id": article_id})
+async def read_article(article_id: int):
+    article = await collection.find_one({"article_id": article_id})
     if article:
         return {"article_id": article_id, "value": article["value"]}
     return {"error": "Item not found"}
 
-@app.get("/articles", response_model=list[Article])
-def read_articles():
-    articles =  collection.find()
+@app.get("/articles", response_model=List[Article])
+async def read_articles():
+    articles_cursor = collection.find()
+    articles = await articles_cursor.to_list(length=None)  # Convert cursor to list
     if articles:
         return articles
     return {"error": "Item not found"}
 
-@app.post("/articles")
-def insert_user(article:Article= Body(...)):
-    result =  collection.insert_one(article.model_dump(by_alias=True, exclude=["id"]))
-    inserted_article =  collection.find_one({"_id": result.inserted_id})
+@app.post("/articles", response_model=Article)
+async def insert_article(article: Article = Body(...)):
+    result = await collection.insert_one(article.model_dump(by_alias=True, exclude=["id"]))
+    inserted_article = await collection.find_one({"_id": result.inserted_id})
     return inserted_article
+
 
 
 
