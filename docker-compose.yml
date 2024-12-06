@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   frontend:
     build:
@@ -8,7 +7,7 @@ services:
       - "5173:5173"
     depends_on:
       - backend
-
+  
   backend:
     build:
       context: ./backend
@@ -18,19 +17,19 @@ services:
       - mongodb
     environment:
       - MONGO_DETAILS=mongodb://mongodb:27017
-
+  
   mongodb:
     image: mongo:5.0
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/dbc
-
+      - mongo-data:/data/db
+  
   ollama:
     build:
       context: ./ollama
     ports:
-      - "11434:11434"  # Example port, update as necessary
+      - "11434:11434"
   
   nginx:
     image: nginx:alpine
@@ -44,5 +43,48 @@ services:
       - backend
       - ollama
 
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    depends_on:
+      - prometheus
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
 volumes:
   mongo-data:
+  prometheus-data:
+  grafana-data:
