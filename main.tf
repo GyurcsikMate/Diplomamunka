@@ -20,17 +20,47 @@ resource "docker_network" "app_network" {
 # volumes.tf
 resource "docker_volume" "mongo_data" {
   name = "mongo-data"
+  driver = "local"
+  driver_opts = {
+    type = "none"
+    device = "${path.cwd}/data/mongodb"
+    o = "bind"
+  }
+
+  provisioner "local-exec" {
+    command = "mkdir -p ${path.cwd}/data/mongodb"
+  }
 }
 
 resource "docker_volume" "prometheus_data" {
   name = "prometheus-data"
+  driver = "local"
+  driver_opts = {
+    type = "none"
+    device = "${path.cwd}/data/prometheus"
+    o = "bind"
+  }
+
+  provisioner "local-exec" {
+    command = "mkdir -p ${path.cwd}/data/prometheus"
+  }
 }
 
 resource "docker_volume" "grafana_data" {
   name = "grafana-data"
+  driver = "local"
+  driver_opts = {
+    type = "none"
+    device = "${path.cwd}/data/grafana"
+    o = "bind"
+  }
+
+  provisioner "local-exec" {
+    command = "mkdir -p ${path.cwd}/data/grafana"
+  }
 }
 
-# mongodb.tf
+# MongoDB container
 resource "docker_image" "mongodb" {
   name = "mongo:5.0"
 }
@@ -38,15 +68,15 @@ resource "docker_image" "mongodb" {
 resource "docker_container" "mongodb" {
   name  = "mongodb"
   image = docker_image.mongodb.image_id
-
+  
   ports {
     internal = 27017
     external = 27017
   }
 
   volumes {
-    volume_name    = docker_volume.mongo_data.name
     container_path = "/data/db"
+    volume_name    = docker_volume.mongo_data.name
   }
 
   networks_advanced {
@@ -54,7 +84,7 @@ resource "docker_container" "mongodb" {
   }
 }
 
-# backend.tf
+# Backend container
 resource "docker_image" "backend" {
   name = "backend"
   build {
@@ -82,7 +112,7 @@ resource "docker_container" "backend" {
   depends_on = [docker_container.mongodb]
 }
 
-# frontend.tf
+# Frontend container
 resource "docker_image" "frontend" {
   name = "frontend"
   build {
@@ -106,7 +136,7 @@ resource "docker_container" "frontend" {
   depends_on = [docker_container.backend]
 }
 
-# ollama.tf
+# Ollama container
 resource "docker_image" "ollama" {
   name = "ollama"
   build {
@@ -128,7 +158,7 @@ resource "docker_container" "ollama" {
   }
 }
 
-# nginx.tf
+# Nginx container
 resource "docker_image" "nginx" {
   name = "nginx:alpine"
 }
@@ -165,7 +195,7 @@ resource "docker_container" "nginx" {
   ]
 }
 
-# prometheus.tf
+# Prometheus container
 resource "docker_image" "prometheus" {
   name = "prom/prometheus:latest"
 }
@@ -203,7 +233,7 @@ resource "docker_container" "prometheus" {
   depends_on = [docker_container.backend]
 }
 
-# grafana.tf
+# Grafana container
 resource "docker_image" "grafana" {
   name = "grafana/grafana:latest"
 }
@@ -239,7 +269,7 @@ resource "docker_container" "grafana" {
   depends_on = [docker_container.prometheus]
 }
 
-# node-exporter.tf
+# Node Exporter container
 resource "docker_image" "node_exporter" {
   name = "prom/node-exporter:latest"
 }
