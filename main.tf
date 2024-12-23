@@ -16,6 +16,7 @@ provider "docker" {
 resource "docker_network" "app_network" {
   name = "app_network"
 }
+#terraform state rm docker_volume.grafana_data docker_volume.prometheus_data docker_volume.mongo_data
 
 # volumes.tf
 resource "docker_volume" "mongo_data" {

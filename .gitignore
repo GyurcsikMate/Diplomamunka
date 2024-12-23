@@ -1,0 +1,8 @@
+# Exclude all .backup files
+*.backup
+
+# Exclude everything in the data/grafana directory
+terraform.tfstate
+data/
+
+
