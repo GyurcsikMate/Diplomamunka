@@ -2,7 +2,7 @@
 *.backup
 
 # Exclude everything in the data/grafana directory
-terraform.tfstate
+*.tfstate
 data/
 
 
